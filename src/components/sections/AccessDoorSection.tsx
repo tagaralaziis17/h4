@@ -21,7 +21,8 @@ const AccessDoorSection = () => {
     const fetchAccessLogs = async () => {
       try {
         setError(null);
-        const baseUrl = import.meta.env.VITE_SOCKET_SERVER || 'http://10.10.1.25:3000';
+        // Use HTTPS for API calls
+        const baseUrl = import.meta.env.VITE_SOCKET_SERVER || 'https://dev-suhu.umm.ac.id';
         const token = localStorage.getItem('authToken');
 
         if (!token) {

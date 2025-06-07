@@ -28,7 +28,8 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   const retryDelay = 5000;
 
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_SERVER || 'http://10.10.1.25:3000';
+    // Use HTTPS for socket connection
+    const socketUrl = import.meta.env.VITE_SOCKET_SERVER || 'https://dev-suhu.umm.ac.id';
     
     const socketInstance = io(socketUrl, {
       reconnectionAttempts: maxRetries,
@@ -39,13 +40,15 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
       transports: ['websocket', 'polling'],
       forceNew: true,
       withCredentials: true,
+      secure: true, // Force secure connection
+      rejectUnauthorized: false, // Accept self-signed certificates
       extraHeaders: {
         'Access-Control-Allow-Credentials': 'true'
       }
     });
 
     socketInstance.on('connect', () => {
-      console.log('Socket connected successfully');
+      console.log('Socket connected successfully via HTTPS');
       setConnected(true);
       setRetryCount(0);
     });

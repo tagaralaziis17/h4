@@ -1,0 +1,4 @@
+# This file ensures the certs directory is tracked by git
+# Place your SSL certificates here:
+# - ca-umm.crt
+# - umm.key

@@ -1,5 +1,8 @@
 import express from 'express';
+import https from 'https';
 import http from 'http';
+import fs from 'fs';
+import path from 'path';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import { createPool } from 'mysql2/promise';
@@ -11,10 +14,25 @@ import jwt from 'jsonwebtoken';
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
 
-// Configure CORS with environment variable
-const corsOrigin = process.env.CORS_ORIGIN || 'http://10.10.1.25';
+// SSL Configuration
+const sslOptions = {
+  key: fs.readFileSync(path.join(process.cwd(), 'certs', 'umm.key')),
+  cert: fs.readFileSync(path.join(process.cwd(), 'certs', 'ca-umm.crt'))
+};
+
+// Create HTTPS server
+const httpsServer = https.createServer(sslOptions, app);
+
+// Create HTTP server for redirect
+const httpApp = express();
+httpApp.use((req, res) => {
+  res.redirect(301, `https://${req.headers.host}${req.url}`);
+});
+const httpServer = http.createServer(httpApp);
+
+// Configure CORS with HTTPS
+const corsOrigin = process.env.CORS_ORIGIN || 'https://dev-suhu.umm.ac.id';
 
 // Configure CORS
 app.use(cors({
@@ -28,8 +46,8 @@ app.use(cors({
 // Parse JSON bodies
 app.use(express.json());
 
-// Configure Socket.IO with CORS
-const io = new Server(server, {
+// Configure Socket.IO with CORS and HTTPS
+const io = new Server(httpsServer, {
   cors: {
     origin: corsOrigin,
     methods: ['GET', 'POST'],
@@ -234,14 +252,15 @@ const fetchHistoricalData = async (timeRange) => {
 
 // API routes
 app.get('/', (req, res) => {
-  res.send('NOC Monitoring Backend is running');
+  res.send('NOC Monitoring Backend is running with SSL');
 });
 
 app.get('/api/health', async (req, res) => {
   const dbConnected = await checkDatabaseConnection();
   res.json({
     status: 'ok',
-    database: dbConnected ? 'connected' : 'disconnected'
+    database: dbConnected ? 'connected' : 'disconnected',
+    ssl: true
   });
 });
 
@@ -495,7 +514,7 @@ async function fetchAndEmitData() {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('Client connected');
+  console.log('Client connected via HTTPS');
   
   socket.on('disconnect', (reason) => {
     console.log('Client disconnected:', reason);
@@ -518,9 +537,17 @@ io.on('connection', (socket) => {
 // Start data emission interval
 setInterval(fetchAndEmitData, 5000);
 
-// Start server
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+// Start servers
+const HTTP_PORT = process.env.HTTP_PORT || 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3001;
+
+// Start HTTP server (for redirect)
+httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
+  console.log(`HTTP server running on port ${HTTP_PORT} (redirecting to HTTPS)`);
+});
+
+// Start HTTPS server
+httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+  console.log(`HTTPS server running on port ${HTTPS_PORT}`);
   checkDatabaseConnection();
 });

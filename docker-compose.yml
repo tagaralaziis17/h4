@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   noc-monitoring-frontend:
@@ -7,12 +7,18 @@ services:
       dockerfile: Dockerfile
     ports:
       - "80:80"
+      - "443:443"
     restart: always
     environment:
       - NODE_ENV=production
-      - VITE_SOCKET_SERVER=http://10.10.1.25:3000
+      - VITE_SOCKET_SERVER=https://dev-suhu.umm.ac.id
+    volumes:
+      - ./certs:/etc/ssl/certs:ro
+      - ./certs:/etc/ssl/private:ro
     networks:
       - noc-network
+    depends_on:
+      - noc-monitoring-backend
 
   noc-monitoring-backend:
     build:
@@ -20,6 +26,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+      - "3001:3001"
     restart: always
     environment:
       - NODE_ENV=production
@@ -27,8 +34,12 @@ services:
       - MYSQL_USER=root
       - MYSQL_PASSWORD=bismillah123
       - MYSQL_DATABASE=suhu
-      - PORT=3000
-      - CORS_ORIGIN=http://10.10.1.25
+      - HTTP_PORT=3000
+      - HTTPS_PORT=3001
+      - CORS_ORIGIN=https://dev-suhu.umm.ac.id
+      - JWT_SECRET=your-secure-jwt-secret-key
+    volumes:
+      - ./certs:/app/certs:ro
     networks:
       - noc-network
 

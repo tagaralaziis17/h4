@@ -28,7 +28,9 @@ const Login = ({ onLogin }: LoginProps) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_SOCKET_SERVER}/api/login`, {
+      // Use HTTPS for login
+      const baseUrl = import.meta.env.VITE_SOCKET_SERVER || 'https://dev-suhu.umm.ac.id';
+      const response = await fetch(`${baseUrl}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -232,7 +234,7 @@ const Login = ({ onLogin }: LoginProps) => {
                   },
                 }}
               >
-                Sign in to access the dashboard
+                Sign in to access the secure dashboard
               </Typography>
             </Box>
 
@@ -416,7 +418,7 @@ const Login = ({ onLogin }: LoginProps) => {
                   },
                 }}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Signing in...' : 'Sign In Securely'}
               </Button>
             </form>
           </Box>
